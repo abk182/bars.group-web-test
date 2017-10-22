@@ -1,0 +1,19 @@
+.edit{
+    width: 100%;
+    margin: 5px;
+}
+
+.delete{
+    width: 100%;
+    margin: 5px;
+}
+
+input{
+    margin:0px;
+    padding:5px;
+}
+
+thead{
+    text-align: center;
+    background: lightgray;
+}
