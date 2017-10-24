@@ -1,63 +1,34 @@
-function RenderTable (data){
+var tableData;
+
+
+function RenderTable (data, hids){
+    console.log(data)
     var table = document.getElementById('maintable');
     table.innerHTML = `<thead class="table-head">
             <tr>
-                <th>HID</th>
+                <th>Свернуть/развернуть</th>
                 <th>Наименование</th>
                 <th>Адрес</th>
                 <th>Телефон</th>
                 <th>Действия</th>
             </tr>
         </thead>`
-    console.log(data)
     data.LPU.map(item => {
         table.innerHTML += `
-        <tbody >
-            <tr id="${item.id}">
-                <td>${item.hid}</td>
-                <td>${item.full_name}</td>
-                <td>${item.address}</td>
-                <td>${item.phone}</td>
+        <tbody id="${item.id}" >
+            <tr>
+                <td>+</td>
+                <td>${item.full_name ? item.full_name : ''}</td>
+                <td>${item.address ? item.address : ''}</td>
+                <td>${item.phone ? item.phone : ''}</td>
                 <td>
-                    <button type="button"  class="edit btn btn-secondary btn-sm" data-id=${item.id}>Изменить</button>
-                    <button type="button" class="delete btn btn-secondary btn-sm" data-id=${item.id}>Удалить</button>
+                    <button type="button"  class="edit btn btn-secondary btn-sm"
+                    onclick="EditRow(${item.id})">Изменить</button>
+                    <button type="button" class="delete btn btn-secondary btn-sm" 
+                    onclick="DeleteRow(${item.id})">Удалить</button>
                 </td>
             </tr>
         </tbody>`
-    })
-
-    //обработчика кнопок
-    for(var i=0; i<data.LPU.length; i++){
-        document.getElementsByClassName('edit')[i].addEventListener('click',function(e){
-            var editable = data.LPU.filter(function (obj) {
-                if(obj.id == e.target.dataset.id){return obj}
-            })
-            EditRow(editable[0]);
-        })
-        document.getElementsByClassName('delete')[i].addEventListener('click',function(e){
-            DeleteRow(e.target.dataset.id);
-        })
-    }
-
-    //фильтрция по HID
-    checkbox = document.getElementById('checkbox')
-
-    checkbox.addEventListener('change', function () {
-        if(checkbox.checked){
-            for (var i = 1; i< table.rows.length; i++){
-                if (table.rows[i].children[0].innerHTML == 'null'){
-                    console.log(table.rows[i].children[0].innerHTML);
-                    table.rows[i].style.display= 'none';
-                }
-            }
-        }else{
-            for (var i = 1; i< table.rows.length; i++){
-                if (table.rows[i].children[0].innerHTML == 'null'){
-                    console.log(table.rows[i].children[0].innerHTML);
-                    table.rows[i].style.display= '';
-                }
-            }
-        }
     })
 }
 
@@ -68,12 +39,23 @@ function GetTable() {
         type: 'GET',
         url: '/api/get',
         success: function(res) {
-            RenderTable(res)
+            tableData=res;
+            var hids = HIDshandler(res);
+            RenderTable(res,hids);
         },
         error: function(err) {
             return console.log(err);
         }
     })
+}
+
+function HIDshandler(data) {
+    var hids={}
+    data.LPU.forEach(item=>{
+        var k= item.hid;
+        hids[k]=true;
+    })
+    return Object.keys(hids)
 }
 
 //добавление записи в таблицу
@@ -100,11 +82,15 @@ document.getElementById('add-submit').addEventListener('click', function(){
 
 
 function DeleteRow(id) {
+    console.log(id);
     $.ajax({
         url: '/api/delete/'+id,
         type: 'DELETE',
         success: function(res) {
-            RenderTable(res)
+            if (res.status == "OK"){
+                console.log(document.getElementById(id))
+                document.getElementById(id).remove();
+            }
         },
         error: function(err) {
             return console.log(err);
@@ -112,17 +98,39 @@ function DeleteRow(id) {
     })
 }
 
-function EditRow(element) {
-    let name = prompt("Наименование",element.full_name);
-    let address = prompt("Возраст",element.address);
-    let phone = prompt("Номер",element.phone);
+function EditRow(id) {
+
+    let element = tableData.LPU.filter(function (item) {
+        if (item.id == id) return item;
+    })
+
+    console.log(element[0])
+    let hid = prompt("HID",element[0].hid);
+    let name = prompt("Наименование",element[0].full_name);
+    let address = prompt("Адресс",element[0].address);
+    let phone = prompt("Номер",element[0].phone);
 
     $.ajax({
-        url: '/api/put/'+element.id,
+        url: '/api/put/'+element[0].id,
         type: 'PUT',
-        data: {name: name, address:address, phone:phone},
+        data: {hid: hid, name: name, address:address, phone:phone},
         success: function(res) {
-            RenderTable(res)
+            if (res.status == "OK"){
+                document.getElementById(id).innerHTML = `
+                <tr>
+                    <td>${hid}</td>
+                    <td>${name}</td>
+                    <td>${address}</td>
+                    <td>${phone}</td>
+                    <td>
+                        <button type="button"  class="edit btn btn-secondary btn-sm"
+                        onclick="EditRow(${element[0].id})">Изменить</button>
+                        <button type="button" class="delete btn btn-secondary btn-sm" 
+                        onclick="DeleteRow(${element[0].id})">Удалить</button>
+                    </td>
+                </tr>
+                `
+            }
         },
         error: function(err) {
             return console.log(err);
@@ -130,4 +138,4 @@ function EditRow(element) {
     })
 }
 
-GetTable()
+GetTable();

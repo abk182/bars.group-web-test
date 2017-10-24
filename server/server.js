@@ -22,28 +22,32 @@ app.get('/api/get', function(req, res) {
 });
 
 app.delete('/api/delete/:id', function(req, res) {
+    console.log(req.params['id'])
     table.LPU = table.LPU.filter(function (obj) {
         if (obj.id != req.params.id){return obj}
     });
     fs.writeFileSync(path.join(__dirname,'./lpu.json'), JSON.stringify(table));
-    res.send(table);
+    res.send({status:"OK"});
 });
 
 app.put('/api/put/:id', function(req, res) {
+    console.log(req.body);
     table.LPU.map(function (item) {
         if( item['id']==req.params['id']){
+            item.hid = req.body.hid;
             item.full_name = req.body.name;
             item.address = req.body.address;
             item.phone = req.body.phone;
         }
     })
     fs.writeFileSync(path.join(__dirname,'./lpu.json'), JSON.stringify(table));
-    res.send(table)
+    res.send({status:"OK"})
 });
 
 app.post('/api/post/', function (req,res) {
     let element = req.body;
     element.id = +new Date();
+
     if (element.hid== "") {element.hid=null}
     table.LPU.push(element);
     fs.writeFileSync(path.join(__dirname,'./lpu.json'), JSON.stringify(table));
